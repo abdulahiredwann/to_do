@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+🎯 Cursor AI Frontend Rules for To-Do List Web App (React + MUI)
+
+UX PHILOSOPHYa
+-------------
+1. Every element must have a purpose.
+2. Fast, intuitive, and responsive interactions.
+3. Show feedback for every action (snackbar, loaders, errors).
+
+UI / COMPONENT RULES
+--------------------
+1. Use Material-UI components before custom styling.
+2. One component = one responsibility.
+   - Example: TaskCard, TaskForm, TaskList, AuthForm, Header.
+3. Consistent design language via ThemeProvider.
+   - Use same colors, fonts, paddings everywhere.
+4. Responsive by default using Grid / Box / Container.
+5. Avoid magic numbers — use theme.spacing() instead.
+
+FORM UX RULES (React Hook Form or Formik)
+-----------------------------------------
+1. Validate onBlur and onSubmit.
+2. Minimal fields — ask only what's necessary.
+3. Clear error messages ("Password must be 6+ characters", not "Invalid").
+4. UX tips:
+   - Autofocus first field.
+   - Submit on Enter.
+   - Show spinner while submitting.
+
+NAVIGATION + FLOW RULES
+------------------------
+1. Sticky header with app name + logout button.
+2. Redirect rules:
+   - Logged-in users go to dashboard.
+   - Non-logged-in users blocked from dashboard.
+3. Dashboard layout:
+   - Left: filters ("All", "In Progress", "Completed").
+   - Right: Task list.
+4. Quick task add via modal or inline form.
+
+API INTEGRATION RULES (Axios)
+-----------------------------
+1. Use a centralized api.js service:
+   - const api = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+2. Wrap all calls with try/catch.
+3. Show feedback with snackbar/toast on success/error.
+
+FINISHING TOUCHES (Client-Winning Details)
+------------------------------------------
+- ✅ Skeleton loaders (not just spinners)
+- ✅ Dark mode toggle with theme
+- ✅ Animations for add/delete (use framer-motion)
+- ✅ Save dark/light mode preference in localStorage
+- ✅ Empty states like "No tasks yet. Add one to get started!"
+- ✅ Test on mobile early and often
+
