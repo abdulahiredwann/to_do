@@ -1,0 +1,280 @@
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "../services/api";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+
+const schema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+    description: z
+      .string()
+      .min(1, "Description is required")
+      .max(500, "Description is too long"),
+    startDate: z.string().min(1, "Start date is required"),
+    dueDate: z.string().min(1, "Due date is required"),
+    status: z.string().min(1, "Status is required"),
+  })
+  .refine(
+    (data) => {
+      const startDate = new Date(data.startDate);
+      const dueDate = new Date(data.dueDate);
+      return startDate <= dueDate;
+    },
+    {
+      message: "Due date must be after start date",
+      path: ["dueDate"],
+    }
+  );
+
+type FormData = z.infer<typeof schema>;
+
+interface Task {
+  _id: string;
+  title: string;
+  description: string;
+  status: string;
+  dueDate: string;
+  user: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface EditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onTaskUpdated: () => void;
+  task: Task | null;
+}
+
+function EditModal({ isOpen, onClose, onTaskUpdated, task }: EditModalProps) {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: task
+      ? {
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          startDate: new Date(task.createdAt).toISOString().split("T")[0],
+          dueDate: new Date(task.dueDate).toISOString().split("T")[0],
+        }
+      : undefined,
+  });
+
+  useEffect(() => {
+    if (task) {
+      reset({
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        startDate: new Date(task.createdAt).toISOString().split("T")[0],
+        dueDate: new Date(task.dueDate).toISOString().split("T")[0],
+      });
+    }
+  }, [task, reset]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isOpen]);
+
+  const onSubmit = async (data: FormData) => {
+    if (!task) return;
+
+    setIsLoading(true);
+    try {
+      await api.put(`/tasks/${task._id}`, data);
+      toast.success("Task updated successfully");
+      reset();
+      onClose();
+      onTaskUpdated();
+      navigate("/tasks");
+    } catch (error: any) {
+      console.error("Failed to update task:", error);
+      toast.error(error.response?.data?.message || "Failed to update task");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !task) return null;
+
+  return (
+    <>
+      <div className="modal-backdrop fade show" onClick={onClose}></div>
+      <div className="modal fade show d-block" tabIndex={-1} role="dialog">
+        <div className="modal-dialog modal-dialog-centered" role="document">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="modal-content"
+          >
+            <div className="modal-header">
+              <h5 className="modal-title">Edit Task</h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={onClose}
+                disabled={isLoading}
+              ></button>
+            </div>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="title" className="form-label">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    className={`form-control ${
+                      errors.title ? "is-invalid" : ""
+                    }`}
+                    id="title"
+                    {...register("title")}
+                    placeholder="Enter task title"
+                  />
+                  {errors.title && (
+                    <div className="invalid-feedback">
+                      {errors.title.message}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="description" className="form-label">
+                    Description
+                  </label>
+                  <textarea
+                    className={`form-control ${
+                      errors.description ? "is-invalid" : ""
+                    }`}
+                    id="description"
+                    rows={4}
+                    {...register("description")}
+                    placeholder="Enter task description"
+                  ></textarea>
+                  {errors.description && (
+                    <div className="invalid-feedback">
+                      {errors.description.message}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="status" className="form-label">
+                    Status
+                  </label>
+                  <select
+                    className={`form-select ${
+                      errors.status ? "is-invalid" : ""
+                    }`}
+                    id="status"
+                    {...register("status")}
+                  >
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  {errors.status && (
+                    <div className="invalid-feedback">
+                      {errors.status.message}
+                    </div>
+                  )}
+                </div>
+
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="startDate" className="form-label">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      className={`form-control ${
+                        errors.startDate ? "is-invalid" : ""
+                      }`}
+                      id="startDate"
+                      {...register("startDate")}
+                    />
+                    {errors.startDate && (
+                      <div className="invalid-feedback">
+                        {errors.startDate.message}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="dueDate" className="form-label">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      className={`form-control ${
+                        errors.dueDate ? "is-invalid" : ""
+                      }`}
+                      id="dueDate"
+                      {...register("dueDate")}
+                    />
+                    {errors.dueDate && (
+                      <div className="invalid-feedback">
+                        {errors.dueDate.message}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onClose}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Task"
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default EditModal;

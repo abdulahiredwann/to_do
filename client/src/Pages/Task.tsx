@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import AddTaskModal from "./AddTask";
+import EditModal from "./EditModal";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -20,6 +21,7 @@ function Task() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchTasks = async () => {
@@ -40,6 +42,22 @@ function Task() {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const handleDelete = async (taskId: string) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      toast.success("Task deleted successfully");
+      fetchTasks();
+      if (selectedTask?._id === taskId) {
+        setSelectedTask(null);
+      }
+    } catch (error: any) {
+      console.error("Failed to delete task:", error);
+      toast.error(error.response?.data?.message || "Failed to delete task");
+    }
+  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status.toLowerCase()) {
@@ -152,11 +170,17 @@ function Task() {
                   <p className="text-muted">{selectedTask.description}</p>
                 </div>
                 <div className="mt-4 d-flex gap-2">
-                  <button className="btn btn-outline-primary">
+                  <button
+                    className="btn btn-outline-primary"
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
                     <i className="bi bi-pencil me-2"></i>
                     Edit
                   </button>
-                  <button className="btn btn-outline-danger">
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={() => handleDelete(selectedTask._id)}
+                  >
                     <i className="bi bi-trash me-2"></i>
                     Delete
                   </button>
@@ -177,6 +201,13 @@ function Task() {
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}
         onTaskAdded={fetchTasks}
+      />
+
+      <EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onTaskUpdated={fetchTasks}
+        task={selectedTask}
       />
     </div>
   );
