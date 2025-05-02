@@ -11,7 +11,7 @@ import Login from "./Pages/Login";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./Context/AuthContext";
 import Task from "./Pages/Task";
-
+import Calander from "./Pages/Calander";
 function App() {
   return (
     <>
@@ -24,6 +24,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/tasks" element={<Task />} />
+              <Route path="/calander" element={<Calander />} />
             </Route>
           </Routes>
         </Router>
