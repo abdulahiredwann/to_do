@@ -1,43 +1,56 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "../services/api";
+import toast, { Toaster } from "react-hot-toast";
+
+const schema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+type FormData = z.infer<typeof schema>;
 
 function Register() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
-    setError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // TODO: Implement registration logic
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated API call
-      navigate("/dashboard");
-    } catch (err) {
-      setError("Registration failed. Please try again.");
+      const sendData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      };
+      // TODO: Implement registration logic here
+      await api.post("/auth/register", sendData).then((res) => {
+        toast.success(res.data.message || "Registration successful");
+        navigate("/");
+      });
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      toast.error(error.response.data.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -62,25 +75,29 @@ function Register() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="mb-3">
                     <label
-                      htmlFor="fullName"
+                      htmlFor="name"
                       className="form-label small fw-medium"
                     >
                       Full Name
                     </label>
                     <input
                       type="text"
-                      className="form-control"
-                      id="fullName"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
+                      className={`form-control ${
+                        errors.name ? "is-invalid" : ""
+                      }`}
+                      id="name"
+                      {...register("name")}
                       placeholder="Enter your full name"
-                      required
                       autoFocus
                     />
+                    {errors.name && (
+                      <div className="invalid-feedback">
+                        {errors.name.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-3">
@@ -92,14 +109,18 @@ function Register() {
                     </label>
                     <input
                       type="email"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.email ? "is-invalid" : ""
+                      }`}
                       id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
+                      {...register("email")}
                       placeholder="Enter your email"
-                      required
                     />
+                    {errors.email && (
+                      <div className="invalid-feedback">
+                        {errors.email.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-3">
@@ -112,13 +133,12 @@ function Register() {
                     <div className="position-relative">
                       <input
                         type="password"
-                        className="form-control"
+                        className={`form-control ${
+                          errors.password ? "is-invalid" : ""
+                        }`}
                         id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
+                        {...register("password")}
                         placeholder="Create a password"
-                        required
                       />
                       <button
                         type="button"
@@ -130,6 +150,11 @@ function Register() {
                         <i className="bi bi-eye"></i>
                       </button>
                     </div>
+                    {errors.password && (
+                      <div className="invalid-feedback">
+                        {errors.password.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-3">
@@ -142,13 +167,12 @@ function Register() {
                     <div className="position-relative">
                       <input
                         type="password"
-                        className="form-control"
+                        className={`form-control ${
+                          errors.confirmPassword ? "is-invalid" : ""
+                        }`}
                         id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
+                        {...register("confirmPassword")}
                         placeholder="Confirm your password"
-                        required
                       />
                       <button
                         type="button"
@@ -160,13 +184,12 @@ function Register() {
                         <i className="bi bi-eye"></i>
                       </button>
                     </div>
+                    {errors.confirmPassword && (
+                      <div className="invalid-feedback">
+                        {errors.confirmPassword.message}
+                      </div>
+                    )}
                   </div>
-
-                  {error && (
-                    <div className="alert alert-danger small" role="alert">
-                      {error}
-                    </div>
-                  )}
 
                   <button
                     type="submit"

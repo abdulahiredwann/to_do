@@ -9,6 +9,16 @@ const userSchema = new Schema({
   password: { type: String, required: true },
 });
 
+// IMPORTANT: Define methods BEFORE creating the model
+userSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign(
+    { _id: this._id, name: this.name, email: this.email },
+    process.env.JWT_SECRET
+  );
+  return token;
+};
+
+// Create model AFTER defining all methods
 const User = mongoose.model("User", userSchema);
 
 // validation for signup
@@ -28,15 +38,6 @@ const validateLogin = (user) => {
     password: Joi.string().required(),
   });
   return schema.validate(user);
-};
-
-// generate auth token
-userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign(
-    { _id: this._id, name: this.name, email: this.email },
-    process.env.JWT_SECRET
-  );
-  return token;
 };
 
 module.exports = { User, validate, validateLogin };

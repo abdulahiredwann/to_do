@@ -4,6 +4,8 @@ const cors = require("cors");
 const http = require("http");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
+const authRouter = require("./Routes/auth.router");
+const taskRouter = require("./Routes/taskRoutes");
 // MongoDB Database Connection
 const mongoose = require("mongoose");
 
@@ -37,6 +39,10 @@ mongoose
 app.get("/", (req, res) => {
   res.send("Welcome to the Task Management System!");
 });
+
+// Routes
+app.use("/api/auth", authRouter); // auth routes
+app.use("/api/tasks", taskRouter); // task routes
 
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

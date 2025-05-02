@@ -8,18 +8,26 @@ import MainLayout from "./Layout/MainLayout";
 import Index from "./Pages";
 import Register from "./Pages/Register";
 import Login from "./Pages/Login";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "./Context/AuthContext";
+import Task from "./Pages/Task";
+
 function App() {
   return (
     <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-          </Route>
-        </Routes>
-      </Router>
+      <Toaster />
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/tasks" element={<Task />} />
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
     </>
   );
 }

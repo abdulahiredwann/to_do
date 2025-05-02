@@ -1,25 +1,47 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "../services/api";
+import toast, { Toaster } from "react-hot-toast";
+
+const schema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
 
+  const onSubmit = async (data: FormData) => {
+    setIsLoading(true);
     try {
-      // TODO: Implement login logic
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated API call
-      navigate("/dashboard");
-    } catch (err) {
-      setError("Invalid email or password");
+      const sendData = {
+        email: data.email,
+        password: data.password,
+      };
+
+      await api.post("/auth/login", sendData).then((res) => {
+        toast.success(res.data.message || "Login successful");
+        navigate("/");
+      });
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      toast.error(error.response?.data?.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +66,7 @@ function Login() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="mb-3">
                     <label
                       htmlFor="email"
@@ -54,14 +76,19 @@ function Login() {
                     </label>
                     <input
                       type="email"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.email ? "is-invalid" : ""
+                      }`}
                       id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      {...register("email")}
                       placeholder="Enter your email"
-                      required
                       autoFocus
                     />
+                    {errors.email && (
+                      <div className="invalid-feedback">
+                        {errors.email.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-3">
@@ -74,12 +101,12 @@ function Login() {
                     <div className="position-relative">
                       <input
                         type="password"
-                        className="form-control"
+                        className={`form-control ${
+                          errors.password ? "is-invalid" : ""
+                        }`}
                         id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        {...register("password")}
                         placeholder="Enter your password"
-                        required
                       />
                       <button
                         type="button"
@@ -91,6 +118,11 @@ function Login() {
                         <i className="bi bi-eye"></i>
                       </button>
                     </div>
+                    {errors.password && (
+                      <div className="invalid-feedback">
+                        {errors.password.message}
+                      </div>
+                    )}
                   </div>
 
                   <div className="d-flex justify-content-between align-items-center mb-3">
@@ -98,11 +130,12 @@ function Login() {
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        id="remember"
+                        id="rememberMe"
+                        {...register("rememberMe")}
                       />
                       <label
                         className="form-check-label small"
-                        htmlFor="remember"
+                        htmlFor="rememberMe"
                       >
                         Remember me
                       </label>
@@ -114,12 +147,6 @@ function Login() {
                       Forgot password?
                     </Link>
                   </div>
-
-                  {error && (
-                    <div className="alert alert-danger small" role="alert">
-                      {error}
-                    </div>
-                  )}
 
                   <button
                     type="submit"
