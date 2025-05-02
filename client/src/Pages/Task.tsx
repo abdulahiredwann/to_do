@@ -22,7 +22,9 @@ function Task() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchTasks = async () => {
     try {
@@ -43,19 +45,21 @@ function Task() {
     fetchTasks();
   }, []);
 
-  const handleDelete = async (taskId: string) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
+  const handleDelete = async () => {
+    if (!selectedTask) return;
 
+    setIsDeleting(true);
     try {
-      await api.delete(`/tasks/${taskId}`);
+      await api.delete(`/tasks/${selectedTask._id}`);
       toast.success("Task deleted successfully");
       fetchTasks();
-      if (selectedTask?._id === taskId) {
-        setSelectedTask(null);
-      }
+      setSelectedTask(null);
+      setIsDeleteModalOpen(false);
     } catch (error: any) {
       console.error("Failed to delete task:", error);
       toast.error(error.response?.data?.message || "Failed to delete task");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -65,8 +69,8 @@ function Task() {
         return "bg-success";
       case "in progress":
         return "bg-primary";
-      case "pending":
-        return "bg-secondary";
+      case "cancelled":
+        return "bg-danger";
       default:
         return "bg-secondary";
     }
@@ -179,7 +183,7 @@ function Task() {
                   </button>
                   <button
                     className="btn btn-outline-danger"
-                    onClick={() => handleDelete(selectedTask._id)}
+                    onClick={() => setIsDeleteModalOpen(true)}
                   >
                     <i className="bi bi-trash me-2"></i>
                     Delete
@@ -209,6 +213,72 @@ function Task() {
         onTaskUpdated={fetchTasks}
         task={selectedTask}
       />
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <>
+          <div
+            className="modal-backdrop fade show"
+            onClick={() => setIsDeleteModalOpen(false)}
+          ></div>
+          <div className="modal fade show d-block" tabIndex={-1} role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="modal-content"
+              >
+                <div className="modal-header">
+                  <h5 className="modal-title">Delete Task</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    disabled={isDeleting}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Are you sure you want to delete this task?</p>
+                  <p className="text-danger">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
