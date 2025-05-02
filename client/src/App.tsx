@@ -7,6 +7,7 @@ import "./App.css";
 import MainLayout from "./Layout/MainLayout";
 import Index from "./Pages";
 import Register from "./Pages/Register";
+import Login from "./Pages/Login";
 function App() {
   return (
     <>
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
           </Route>
         </Routes>
       </Router>
