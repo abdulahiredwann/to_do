@@ -9,12 +9,13 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { title, description, dueDate, status } = req.body;
+    const { title, description, dueDate, status, startDate } = req.body;
     const task = new Task({
       title,
       description,
       dueDate,
       status,
+      startDate,
       user: req.user._id, // User ID from middleware
     });
 
@@ -64,10 +65,10 @@ exports.updateTask = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { title, description, status, dueDate } = req.body;
+    const { title, description, status, dueDate, startDate } = req.body;
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
-      { title, description, status, dueDate },
+      { title, description, status, dueDate, startDate },
       { new: true }
     );
 

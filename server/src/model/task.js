@@ -11,6 +11,7 @@ const taskSchema = new Schema({
     default: "In Progress",
   },
   dueDate: { type: Date },
+  startDate: { type: Date },
   user: {
     type: Schema.Types.ObjectId,
     ref: "User",
@@ -35,6 +36,7 @@ const validateTask = (task) => {
     description: Joi.string().max(500),
     status: Joi.string().valid("In Progress", "Completed", "Cancelled"),
     dueDate: Joi.date(),
+    startDate: Joi.date(),
   });
   return schema.validate(task);
 };
@@ -46,6 +48,7 @@ const validateTaskUpdate = (task) => {
     description: Joi.string().max(500),
     status: Joi.string().valid("In Progress", "Completed", "Cancelled"),
     dueDate: Joi.date(),
+    startDate: Joi.date(),
   });
   return schema.validate(task);
 };
